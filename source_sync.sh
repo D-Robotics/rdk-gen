@@ -38,27 +38,27 @@ SCRIPT_NAME=`basename $0`
 # info about sources.
 # NOTE: *Add only kernel repos here. Add new repos separately below. Keep related repos together*
 SOURCE_INFO="
-k:kernel:HorizonRDK/kernel.git:
-o:bootloader:HorizonRDK/bootloader.git:
-o:hobot-miniboot:HorizonRDK/hobot-miniboot.git:
-o:hobot-boot:HorizonRDK/hobot-boot.git:
-o:hobot-bpu-drivers:HorizonRDK/hobot-bpu-drivers.git:
-o:hobot-camera:HorizonRDK/hobot-camera.git:
-o:hobot-configs:HorizonRDK/hobot-configs.git:
-o:hobot-dnn:HorizonRDK/hobot-dnn.git:
-o:hobot-dtb:HorizonRDK/hobot-dtb.git:
-o:hobot-display:HorizonRDK/hobot-display.git:
-o:hobot-io:HorizonRDK/hobot-io.git:
-o:hobot-io-samples:HorizonRDK/hobot-io-samples.git:
-o:hobot-kernel-headers:HorizonRDK/hobot-kernel-headers.git:
-o:hobot-multimedia:HorizonRDK/hobot-multimedia.git:
-o:hobot-multimedia-dev:HorizonRDK/hobot-multimedia-dev.git:
-o:hobot-spdev:HorizonRDK/hobot-spdev.git:
-o:hobot-sp-samples:HorizonRDK/hobot-sp-samples.git:
-o:hobot-utils:HorizonRDK/hobot-utils.git:
-o:hobot-wifi:HorizonRDK/hobot-wifi.git:
-o:hobot-multimedia-samples:HorizonRDK/hobot-multimedia-samples.git:
-o:hobot-audio-config:HorizonRDK/hobot-audio-config.git:
+k:kernel:D-Robotics/kernel.git:
+o:bootloader:D-Robotics/bootloader.git:
+o:hobot-miniboot:D-Robotics/hobot-miniboot.git:
+o:hobot-boot:D-Robotics/hobot-boot.git:
+o:hobot-bpu-drivers:D-Robotics/hobot-bpu-drivers.git:
+o:hobot-camera:D-Robotics/hobot-camera.git:
+o:hobot-configs:D-Robotics/hobot-configs.git:
+o:hobot-dnn:D-Robotics/hobot-dnn.git:
+o:hobot-dtb:D-Robotics/hobot-dtb.git:
+o:hobot-display:D-Robotics/hobot-display.git:
+o:hobot-io:D-Robotics/hobot-io.git:
+o:hobot-io-samples:D-Robotics/hobot-io-samples.git:
+o:hobot-kernel-headers:D-Robotics/hobot-kernel-headers.git:
+o:hobot-multimedia:D-Robotics/hobot-multimedia.git:
+o:hobot-multimedia-dev:D-Robotics/hobot-multimedia-dev.git:
+o:hobot-spdev:D-Robotics/hobot-spdev.git:
+o:hobot-sp-samples:D-Robotics/hobot-sp-samples.git:
+o:hobot-utils:D-Robotics/hobot-utils.git:
+o:hobot-wifi:D-Robotics/hobot-wifi.git:
+o:hobot-multimedia-samples:D-Robotics/hobot-multimedia-samples.git:
+o:hobot-audio-config:D-Robotics/hobot-audio-config.git:
 "
 
 # exit on error on sync
@@ -190,7 +190,7 @@ function DownloadAndSync {
 	fi
 
 	if [ ! -z "$TAG" ]; then
-		if [ "xmain" == x"$TAG" ] || [ "xdevelop" == x"$TAG" ]; then
+		if [ "xmain" == x"$TAG" ] || [ "xdevelop" == x"$TAG" ] || [ "xfeat-ubuntu22.04" == x"$TAG" ]; then
 			# checkout main or develop
 			pushd ${RDK_SOURCE_DIR} > /dev/null
 			echo "Syncing up with branch origin/$TAG..."
