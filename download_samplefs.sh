@@ -53,7 +53,7 @@ main()
     cd ${rootfs_dir}
 
     # Set the URL of the file server
-    SERVER_URL="http://sunrise.horizon.cc/samplefs"
+    SERVER_URL="http://archive.d-robotics.cc/samplefs"
 
     FILE_NAME="samplefs_""$ubuntufs_src"
     echo "FILE_NAME: " $FILE_NAME
