@@ -47,21 +47,21 @@ android-sdk-libsparse-utils mtools parted dosfstools udev rsync
 执行以下命令下载交叉编译工具链：
 
 ```shell
-curl -fO http://sunrise.horizon.cc/toolchain/gcc-ubuntu-9.3.0-2020.03-x86_64-aarch64-linux-gnu.tar.xz
+curl -fO http://archive.d-robotics.cc//toolchain/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu.tar.xz
 ```
 
 解压并安装，建议安装到/opt目录下，通常向/opt目录写数据需要sudo权限，例如:
 
 ```shell
-sudo tar -xvf gcc-ubuntu-9.3.0-2020.03-x86_64-aarch64-linux-gnu.tar.xz -C /opt
+sudo tar -xvf gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu.tar.xz -C /opt
 ```
 
 配置交叉编译工具链的环境变量：
 
 ```shell
-export CROSS_COMPILE=/opt/gcc-ubuntu-9.3.0-2020.03-x86_64-aarch64-linux-gnu/bin/aarch64-linux-gnu-
-export LD_LIBRARY_PATH=/opt/gcc-ubuntu-9.3.0-2020.03-x86_64-aarch64-linux-gnu/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
-export PATH=$PATH:/opt/gcc-ubuntu-9.3.0-2020.03-x86_64-aarch64-linux-gnu/bin/
+export CROSS_COMPILE=/opt/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/bin/aarch64-linux-gnu-
+export LD_LIBRARY_PATH=/opt/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
+export PATH=$PATH:/opt/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/bin/
 export ARCH=arm64
 ```
 
@@ -69,12 +69,12 @@ export ARCH=arm64
 
 ## rdk-gen
 
-rdk-gen用于构建适用于地平线RDK X3的定制操作系统镜像。它提供了一个可扩展的框架，允许用户根据自己的需求定制和构建RDK X3的Ubuntu操作系统。
+rdk-gen用于构建适用于D-robotics RDK X3的定制操作系统镜像。它提供了一个可扩展的框架，允许用户根据自己的需求定制和构建RDK X3的Ubuntu操作系统。
 
 下载源码：
 
 ```shell
-git clone https://github.com/HorizonRDK/rdk-gen.git
+git clone https://github.com/D-Robotics/rdk-gen.git
 ```
 
 下载完成后，rdk-gen的目录结构如下：
@@ -83,7 +83,7 @@ git clone https://github.com/HorizonRDK/rdk-gen.git
 | ------------------------- | ------------------------------------------------------------ |
 | pack_image.sh             | 构建系统镜像的代码入口                                       |
 | download_samplefs.sh      | 下载预先制作的基础ubuntu文件系统                       |
-| download_deb_pkgs.sh      | 下载地平线的deb软件包，需要预装到系统镜像中，包括内核、多媒体库、示例代码、tros.bot等 |
+| download_deb_pkgs.sh      | 下载D-robotics的deb软件包，需要预装到系统镜像中，包括内核、多媒体库、示例代码、tros.bot等 |
 | hobot_customize_rootfs.sh | 定制化修改ubuntu文件系统                               |
 | source_sync.sh            | 下载源码，包括bootloader、uboot、kernel、示例代码等源码      |
 | mk_kernel.sh              | 编译内核、设备树和驱动模块                                   |
@@ -104,7 +104,7 @@ sudo ./pack_image.sh
 
 ### pack_image.sh 编译过程介绍
 
-1. 调用 download_samplefs.sh 和 download_deb_pkgs.sh 两个脚本从地平线的文件服务器上下载samplefs和需要预装的deb软件包
+1. 调用 download_samplefs.sh 和 download_deb_pkgs.sh 两个脚本从D-robotics的文件服务器上下载samplefs和需要预装的deb软件包
 2. 解压samplefs，并调用 hobot_customize_rootfs.sh 脚本对filesystem做定制化配置
 3. 把deb安装进filesystem
 4. 生成系统镜像
@@ -118,7 +118,7 @@ rdk-linux相关的内核、bootloader、hobot-xxx软件包源码都托管在 [Gi
 执行以下命令下载主线分支代码：
 
 ```shell
-./source_sync.sh -t main
+./source_sync.sh -t feat-ubuntu22.04
 ```
 
 该程序默认会把源码下载到 source 目录下：
@@ -163,7 +163,7 @@ dtb  Image  Image.lz4  kernel_headers  modules
 
 ## hobot-xxx软件包
 
-hobot-xxx软件包是地平线维护的debian软件包的源码和配置，下载源码后，可以执行 `mk_deb.sh` 重新构建debian包。
+hobot-xxx软件包是D-robotics维护的debian软件包的源码和配置，下载源码后，可以执行 `mk_deb.sh` 重新构建debian包。
 
 帮助信息如下：
 
@@ -212,7 +212,7 @@ The debian package named by help is not supported, please check the input parame
 
 `bootloader`源码用于生成最小启动镜像`miniboot.img`，生成包含分区表、spl、ddr、bl31、uboot一体的启动固件。
 
-RDK X3的最小启动镜像一般会由地平线官方进行维护发布，可以从 [miniboot](http://sunrise.horizon.cc/downloads/miniboot/) 下载对应的版本。
+RDK X3的最小启动镜像一般会由D-robotics官方进行维护发布，可以从 [miniboot](http://archive.d-robotics.cc/downloads/miniboot/) 下载对应的版本。
 
 按照以下步骤重新编译生成miniboot。
 
@@ -302,7 +302,7 @@ cd build
 
 ## Ubuntu 文件系统制作
 
-本章节介绍如何制作 `samplefs_desktop-v2.0.0.tar.gz` 文件系统，地平线会维护该文件系统，如果有定制化需求，则需按照本章说明重新制作。
+本章节介绍如何制作 `samplefs_desktop-v3.0.0.tar.gz` 文件系统，D-robotics会维护该文件系统，如果有定制化需求，则需按照本章说明重新制作。
 
 ### 环境配置
 
@@ -349,19 +349,11 @@ parted命令是由GNU组织开发的一款功能强大的磁盘分区和分区�
 
 ### 制作Ubuntu rootfs脚本代码
 
-下载`rdk-gen`源码：
-
-```shell
-git clone https://github.com/HorizonRDK/rdk-gen.git
-```
-
 执行以下命令生成ubuntu文件系统：
 
+制作desktop系统
 ```shell
-mkdir ubuntu_rootfs
-cd ubuntu_rootfs
-cp ../make_ubuntu_rootfs.sh .
-chmod +x make_ubuntu_rootfs.sh
+cd samplefs
 sudo ./make_ubuntu_rootfs.sh
 ```
 
@@ -369,11 +361,30 @@ sudo ./make_ubuntu_rootfs.sh
 
 ```shell
 desktop/                                   # 编译输出目录
-├── focal-xj3-arm64                        # 编译成功后生成的根文件系统，会有比较多的系统临时文件
-├── samplefs_desktop-v2.0.0.tar.gz         # 压缩打包 focal-xj3-arm64 内需要的内容
-└── samplefs_desktop-v2.0.0.tar.gz.info    # 当前系统安装了哪些 apt 包
+├── jammy-xj3-arm64                        # 编译成功后生成的根文件系统，会有比较多的系统临时文件
+├── samplefs_desktop-v3.0.0.tar.gz         # 压缩打包 jammy-xj3-arm64 内需要的内容
+└── samplefs_desktop-v3.0.0.tar.gz.info    # 当前系统安装了哪些 apt 包
+```
 
-rootfs/                                    # 解压 samplefs_desktop-v2.0.0.tar.gz 后应该包含以下文件
+制作server系统
+```shell
+cd samplefs
+sudo ./make_ubuntu_rootfs.sh server
+```
+
+编译成功的输出结果：
+
+```shell
+server/                                   # 编译输出目录
+├── jammy-xj3-arm64                        # 编译成功后生成的根文件系统，会有比较多的系统临时文件
+├── samplefs_server-v3.0.0.tar.gz         # 压缩打包 jammy-xj3-arm64 内需要的内容
+└── samplefs_server-v3.0.0.tar.gz.info    # 当前系统安装了哪些 apt 包
+```
+
+解压 samplefs_desktop-v3.0.0.tar.gz 或者 samplefs_server-v3.0.0.tar.gz 后应该包含以下文件
+
+```shell
+rootfs/
 ├── app
 ├── bin -> usr/bin
 ├── boot
@@ -412,4 +423,4 @@ rootfs/                                    # 解压 samplefs_desktop-v2.0.0.tar.
 
 **DESKTOP_PACKAGE_LIST**: 支持桌面图形化界面需要安装的软件包
 
-地平线官方维护的 `samplefs_desktop` 文件系统会包含以上所有配置包的内容，用户可以根据自己的需求进行增、删。
+D-robotics官方维护的 `samplefs_desktop` 文件系统会包含以上所有配置包的内容，用户可以根据自己的需求进行增、删。
