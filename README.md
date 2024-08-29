@@ -2,11 +2,11 @@
 
 ## 概述
 
-介绍交叉编译开发环境的要求及搭建，系统镜像的编译说明。
+介绍 RDK 开发环境的搭建方法、源码目录结构、系统镜像的编译说明。
 
 ## 开发环境
 
-交叉编译是指在主机上开发和构建软件，然后把构建的软件部署到开发板上运行。主机一般拥有比开发板更高的性能和内存，可以加速代码的构建，可以安装更多的开发工具，方便开发。
+交叉编译是指在主机上开发和构建软件，然后把构建的软件部署到开发板上运行。主机一般拥有比开发板更高的性能和更多的内存，可以高效完成代码的构建，可以安装更多的开发工具。
 
 **主机编译环境要求**
 
@@ -16,30 +16,30 @@ Ubuntu 18.04 系统安装以下软件包：
 
 ```shell
 sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
-flex python-numpy mtd-utils zlib1g-dev debootstrap \
-libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
-curl git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
-android-tools-fsutils mtools parted dosfstools udev rsync
+                        flex python-numpy mtd-utils zlib1g-dev debootstrap \
+                        libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
+                        curl git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
+                        android-tools-fsutils mtools parted dosfstools udev rsync
 ```
 
 Ubuntu 20.04 系统安装以下软件包：
 
 ```shell
 sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
-flex python-numpy mtd-utils zlib1g-dev debootstrap \
-libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
-curl git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
-android-sdk-libsparse-utils android-sdk-ext4-utils mtools parted dosfstools udev rsync
+                        flex python-numpy mtd-utils zlib1g-dev debootstrap \
+                        libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
+                        curl git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
+                        android-sdk-libsparse-utils android-sdk-ext4-utils mtools parted dosfstools udev rsync
 ```
 
 Ubuntu 22.04 系统安装以下软件包：
 
 ```shell
 sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
-flex python3-numpy mtd-utils zlib1g-dev debootstrap \
-libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
-curl repo git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
-android-sdk-libsparse-utils mtools parted dosfstools udev rsync
+                        flex python3-numpy mtd-utils zlib1g-dev debootstrap \
+                        libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
+                        curl repo git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
+                        android-sdk-libsparse-utils mtools parted dosfstools udev rsync
 ```
 
 **安装交叉编译工具链**
@@ -47,7 +47,7 @@ android-sdk-libsparse-utils mtools parted dosfstools udev rsync
 执行以下命令下载交叉编译工具链：
 
 ```shell
-curl -fO http://sunrise.horizon.cc/toolchain/gcc-ubuntu-9.3.0-2020.03-x86_64-aarch64-linux-gnu.tar.xz
+curl -fO http://archive.d-robotics.cc/toolchain/gcc-ubuntu-9.3.0-2020.03-x86_64-aarch64-linux-gnu.tar.xz
 ```
 
 解压并安装，建议安装到/opt目录下，通常向/opt目录写数据需要sudo权限，例如:
@@ -69,63 +69,90 @@ export ARCH=arm64
 
 ## rdk-gen
 
-rdk-gen用于构建适用于地平线RDK X3的定制操作系统镜像。它提供了一个可扩展的框架，允许用户根据自己的需求定制和构建RDK X3的Ubuntu操作系统。
+rdk-gen 用于构建适用于 RDK 的操作系统镜像。它提供了一个可扩展的框架，允许用户根据自己的需求定制和构建 RDK 的 Ubuntu 操作系统。
 
-下载源码：
+rdk-gen提供两个主要的功能：
+
+- 构建适用于 RDK 的操作系统镜像。使用本功能下载 RDK 官方的资料，生成与官方发布的完全一样的系统镜像；在这个镜像制作方法中，用户可以预装更多需要的软件包。
+- 本仓库提供二次开发官方系统软件和应用 deb 包的方法，提供脚本程序完成所有软件源码的构建。
+
+rdk-gen 源码下载方式：
 
 ```shell
-git clone https://github.com/HorizonRDK/rdk-gen.git
+git clone https://github.com/D-Robotics/rdk-gen.git
 ```
 
-下载完成后，rdk-gen的目录结构如下：
+下载完成后，rdk-gen 的主要文件、目录说明如下：
 
 | **目录**                  | **说明**                                                     |
 | ------------------------- | ------------------------------------------------------------ |
-| pack_image.sh             | 构建系统镜像的代码入口                                       |
-| download_samplefs.sh      | 下载预先制作的基础ubuntu文件系统                       |
-| download_deb_pkgs.sh      | 下载地平线的deb软件包，需要预装到系统镜像中，包括内核、多媒体库、示例代码、tros.bot等 |
-| hobot_customize_rootfs.sh | 定制化修改ubuntu文件系统                               |
-| source_sync.sh            | 下载源码，包括bootloader、uboot、kernel、示例代码等源码      |
-| mk_kernel.sh              | 编译内核、设备树和驱动模块                                   |
-| mk_debs.sh                | 生成deb软件包                                                |
-| make_ubuntu_samplefs.sh   | 制作ubuntu系统filesystem的代码，可以修改本脚本定制samplefs   |
-| config                    | 存放需要放到系统镜像/hobot/config目录下的内容，一个vfat根式的分区，如果是sd卡启动方式，用户可以在windows系统下直接修改该分区的内容。 |
+| pack_image.sh             | 构建系统镜像的主代码入口                                     |
+| build_params              | 构建系统镜像的配置文件，指定下载 Samplefs 和 deb 包的路径、版本等信息 |
+| download_samplefs.sh      | 下载预先制作的基础 Ubuntu 根文件系统                         |
+| download_deb_pkgs.sh      | 下载 RDK 官方 debian 软件包，会被预装到系统镜像中，包括内核、多媒体库、示例代码、tros.bot 等 |
+| hobot_customize_rootfs.sh | 定制化修改 Ubuntu 文件系统，如创建用户、启用或禁止自启动项等 |
+| config                    | 存放需要放到系统镜像 /hobot/config 目录下的内容，该目录时一个 vfat 格式的分区，如果是 sd 卡启动方式，用户可以在 PC 上修改该分区的内容，如设置自启动项等。 |
+| VERSION                   | 系统镜像的版本信息                                           |
+
+当需要定制化开发系统镜像和软件包时，需要关注以下资源
+
+| **目录**     | **说明**                                                     |
+| ------------ | ------------------------------------------------------------ |
+| mk_kernel.sh | 进行内核开发时，需要使用本脚本编译内核、设备树和驱动模块     |
+| mk_debs.sh   | 进行自定义软件包开发时，需要使用本脚本生成 debian 软件包     |
+| samplefs     | 进行自定义根文件系统开发时，需要使用本目录下的 make_ubuntu_samplefs.sh 脚本定制 samplefs |
+| source       | 进行软件开发时，下载的源码会在本目录下，默认不下载源码       |
 
 ## 编译系统镜像
 
-运行以下命令进行系统镜像的打包：
+构建适用于 RDK 的操作系统镜像，运行以下命令进行系统镜像的打包，本方法可以构建出与官方发布一样的镜像。
 
 ```shell
 cd rdk-gen
 sudo ./pack_image.sh
 ```
 
-需要有sudo权限进行编译，成功后会在deploy目录下生成 `*.img` 的系统镜像文件。
+需要有 sudo 权限进行编译，成功后会在deploy目录下生成 `*.img` 的系统镜像文件。
 
-### pack_image.sh 编译过程介绍
+### pack_image.sh 打包步骤
 
-1. 调用 download_samplefs.sh 和 download_deb_pkgs.sh 两个脚本从地平线的文件服务器上下载samplefs和需要预装的deb软件包
-2. 解压samplefs，并调用 hobot_customize_rootfs.sh 脚本对filesystem做定制化配置
-3. 把deb安装进filesystem
+1. 调用 download_samplefs.sh 和 download_deb_pkgs.sh 两个脚本从 RDK 官方的文件服务器上下载 samplefs 和需要预装的 debian 软件包
+2. 解压 samplefs，调用 hobot_customize_rootfs.sh 脚本对 filesystem 做定制化配置
+3. 把 debian 软件包安装进 filesystem
 4. 生成系统镜像
 
-## 下载源码
+如果用户有额外的需要安装的系统镜像的 debian 包，可以创建 third_packages 目录，并把 deb 包放到 third_packages  目录中，在第 3 步时会自动安装进系统。
+
+PS： pack_image.sh 支持 -l 选项完成本地编译，不会从 RDK 官方源下载 samplefs 和 debian 软件包，在深度开发 RDK 系统时，可以使用本选项进行调试。
+
+```
+sudo ./pack_image.sh -l
+```
+
+## 深度开发 RDK 系统
+
+### 下载完整的源码
 
 rdk-linux相关的内核、bootloader、hobot-xxx软件包源码都托管在 [GitHub](https://github.com/)上。在下载代码前，请先注册、登录  [GitHub](https://github.com/)，并通过 [Generating a new SSH key and adding it to the ssh-agent](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) 方式添加开发服务器的`SSH Key`到用户设置中。
 
-`source_sync.sh`用于下载源代码，包括bootloader、uboot、kernel、示例代码等，该下载程序通过执行 `git clone git@github.com:xxx.git` 的方式把所有源码下载到本地。
-
-执行以下命令下载主线分支代码：
+执行以下命令下载主线分支代码，主线分支的代码与官方发布的最新系统镜像版本对应：
 
 ```shell
-./source_sync.sh -t main
+repo init -u git@github.com:D-Robotics/manifest.git -b main
 ```
 
-该程序默认会把源码下载到 source 目录下：
+执行以下命令下载开发分支代码，开发分支的代码会不断新增特性与修复 bug，但是稳定性没有主分支代码高：
+
+```
+repo init -u git@github.com:D-Robotics/manifest.git -b develop
+```
+
+使用以上命令下载代码后，在下载 rdk-gen 的同时会把 source 目录下的源码全部下载下来，源码量比较大，下载时间比较长：
 
 ```
 source
 ├── bootloader
+├── hobot-audio-config
 ├── hobot-boot
 ├── hobot-bpu-drivers
 ├── hobot-camera
@@ -136,8 +163,10 @@ source
 ├── hobot-io
 ├── hobot-io-samples
 ├── hobot-kernel-headers
+├── hobot-miniboot
 ├── hobot-multimedia
 ├── hobot-multimedia-dev
+├── hobot-multimedia-samples
 ├── hobot-spdev
 ├── hobot-sp-samples
 ├── hobot-utils
@@ -145,7 +174,17 @@ source
 └── kernel
 ```
 
-## kernel
+### 开发前的准备
+
+在实际开发前，需要先完成一次系统镜像的构建，把必要的根文件系统和依赖的官方 deb 包下载下来，构建系统完成后，解压出来的根文件系统内的头文件和库文件会会应用软件包使用。
+
+```
+sudo ./pack_image.sh
+```
+
+需要有 sudo 权限进行编译，成功后会在deploy目录下生成 `*.img` 的系统镜像文件。
+
+### 编译 kernel
 
 执行以下命令编译linux内核：
 
@@ -161,74 +200,66 @@ dtb  Image  Image.lz4  kernel_headers  modules
 
 这些内容会被hobot-boot、hobot-dtb和hobot-kernel-headers三个debian包所使用，所以如果想要自定义修改这三个软件包，需要先编译内核。
 
-## hobot-xxx软件包
+### 编译 RDK 官方 debian 软件包
 
-hobot-xxx软件包是地平线维护的debian软件包的源码和配置，下载源码后，可以执行 `mk_deb.sh` 重新构建debian包。
+以 hobot- 开头软件包是 RDK 官方开发和维护的 debian 软件包的源码和配置，下载完整源码后，可以执行 `mk_debs.sh` 重新构建debian包。
 
 帮助信息如下：
 
 ```shell
 $ ./mk_debs.sh help
-The debian package named by help is not supported, please check the input parameters.
-./mk_deb.sh [all] | [deb_name]
-    hobot-multimedia-dev, Version 2.0.0
-    hobot-wifi, Version 2.0.0
-    hobot-camera, Version 2.0.0
-    hobot-dtb, Version 2.0.0
-    hobot-configs, Version 2.0.0
-    hobot-io, Version 2.0.0
-    hobot-spdev, Version 2.0.0
-    hobot-boot, Version 2.0.0
-    hobot-sp-samples, Version 2.0.0
-    hobot-bpu-drivers, Version 2.0.0
-    hobot-multimedia-samples, Version 2.0.0
-    hobot-dnn, Version 2.0.0
-    hobot-io-samples, Version 2.0.0
-    hobot-kernel-headers, Version 2.0.0
-    hobot-utils, Version 2.0.0
-    hobot-multimedia, Version 2.0.0
-    hobot-display, Version 2.0.0
+The debian package named by 'help' is not supported, please check the input parameters.
+./mk_debs.sh [all] | [deb_name]
+    hobot-boot
+    hobot-kernel-headers
+    hobot-dtb
+    hobot-configs
+    hobot-utils
+    hobot-wifi
+    hobot-io
+    hobot-io-samples
+    hobot-multimedia
+    hobot-multimedia-dev
+    hobot-camera
+    hobot-dnn
+    hobot-spdev
+    hobot-sp-samples
+    hobot-multimedia-samples
+    hobot-miniboot
+    hobot-audio-config
 ```
 
-### 整体构建
+#### 编译所有 debian 软件包
 
-执行以下命令会重新全部构建所有的debian包（需要先完成kernel的编译）：
+执行以下命令会重新构建所有的 debian 包（需要先完成 kernel 的编译）：
 
 ```shell
-./mk_deb.sh
+./mk_kernel.sh
+./mk_debs.sh
 ```
 
-构建完成后，会在`deploy/deb_pkgs`目录下生成deb软件包。
+构建完成后，会在`deploy/deb_pkgs`目录下生成 `*.deb` 后缀的软件包。
 
-### 构建单独软件包
+#### 构建单独的 debian 软件包
 
-`mk_deb.sh` 支持单独构建指定的软件包，在执行时带包名参数即可，例如：
+`mk_debs.sh` 支持单独构建指定的软件包，在执行时带包名参数即可，例如：
 
 ```shell
-./mk_deb.sh hobot-configs
+./mk_debs.sh hobot-configs
 ```
 
-## bootloader
+### 编译 bootloader
 
-`bootloader`源码用于生成最小启动镜像`miniboot.img`，生成包含分区表、spl、ddr、bl31、uboot一体的启动固件。
+`bootloader`源码用于生成最小启动镜像 `miniboot.img`，生成包含分区表、spl、ddr、bl31、uboot等的最小启动固件。
 
-RDK X3的最小启动镜像一般会由地平线官方进行维护发布，可以从 [miniboot](http://sunrise.horizon.cc/downloads/miniboot/) 下载对应的版本。
+RDK 的最小启动镜像一般会由 RDK 官方进行维护发布，可以从 [miniboot](https://archive.d-robotics.cc/downloads/miniboot/) 下载对应的版本，`hobot-miniboot` 软件包也会同步更新。`bootloader` 涉及最基础的启动过程，在修改本模块前，请充分了解本模块的功能。
 
-按照以下步骤重新编译生成miniboot。
+按照以下步骤重新编译生成 miniboot。
 
-### 同步uboot代码
-
-执行命令下载uboot代码：
+#### 选择硬件配置文件
 
 ```shell
-git submodule init
-git submodule update
-```
-
-### 选择硬件配置文件
-
-```shell
-cd build
+cd source/bootloader/build
 ./xbuild.sh lunch
 
 You're building on #221-Ubuntu SMP Tue Apr 18 08:32:52 UTC 2023
@@ -271,53 +302,35 @@ You're building on #221-Ubuntu SMP Tue Apr 18 08:32:52 UTC 2023
 You are selected board config: horizon/x3/board_ubuntu_nand_sdcard_config.mk
 ```
 
-### 整体编译
+#### 编译 miniboot
 
-进入到build目录下，执行 xbuild.sh 进行整体编译：
+进入到 build 目录下，执行 xbuild.sh 进行整体编译：
 
 ```shell
-cd build
+cd source/bootloader/build
 ./xbuild.sh
 ```
 
 编译成功后，会在编译镜像输出目录（deploy_ubuntu_xxx） 目录下生成 miniboot.img， uboot.img， disk_nand_minimum_boot.img等镜像文件。其中disk_nand_minimum_boot.img即最小启动镜像文件。
 
-### 模块化编译
-
-通过 xbuild.sh 脚本编译单独模块，生成的镜像文件会输出到编译镜像输出目录（deploy_ubuntu_xxx）下。
-
-```shell
-./xbuild.sh miniboot | uboot
-```
-
-**miniboot：** 调用mk_miniboot.sh 生成 miniboot.img
-
-**uboot:**  调用mk_uboot.sh 生成 uboot.img
-
-模块化编译后，可以执行 pack 命令打包 disk_nand_minimum_boot.img
-
-```shell
-./xbuild.sh pack
-```
-
 ## Ubuntu 文件系统制作
 
-本章节介绍如何制作 `samplefs_desktop-v2.0.0.tar.gz` 文件系统，地平线会维护该文件系统，如果有定制化需求，则需按照本章说明重新制作。
+本章节介绍如何制作 `samplefs_desktop_v2.1.0.tar.gz` 文件系统，RDK 官方会维护该文件系统，如果有定制化需求，则需按照本章说明重新制作。
 
 ### 环境配置
 
-建议使用ubuntu主机进行开发板ubuntu文件系统的制作，首先在主机环境安装以下软件包：
+建议使用 ubuntu 主机进行开发板 ubuntu 文件系统的制作，首先在主机环境安装以下软件包：
 
 ```shell
 sudo apt-get install wget ca-certificates device-tree-compiler pv bc lzop zip binfmt-support \
-build-essential ccache debootstrap ntpdate gawk gcc-arm-linux-gnueabihf qemu-user-static \
-u-boot-tools uuid-dev zlib1g-dev unzip libusb-1.0-0-dev fakeroot parted pkg-config \
-libncurses5-dev whiptail debian-keyring debian-archive-keyring f2fs-tools libfile-fcntllock-perl \
-rsync libssl-dev nfs-kernel-server btrfs-progs ncurses-term p7zip-full kmod dosfstools \
-libc6-dev-armhf-cross imagemagick curl patchutils liblz4-tool libpython2.7-dev linux-base swig acl \
-python3-dev python3-distutils libfdt-dev locales ncurses-base pixz dialog systemd-container udev \
-lib32stdc++6 libc6-i386 lib32ncurses5 lib32tinfo5 bison libbison-dev flex libfl-dev cryptsetup gpg \
-gnupg1 gpgv1 gpgv2 cpio aria2 pigz dirmngr python3-distutils distcc git dos2unix apt-cacher-ng
+                    build-essential ccache debootstrap ntpdate gawk gcc-arm-linux-gnueabihf qemu-user-static \
+                    u-boot-tools uuid-dev zlib1g-dev unzip libusb-1.0-0-dev fakeroot parted pkg-config \
+                    libncurses5-dev whiptail debian-keyring debian-archive-keyring f2fs-tools libfile-fcntllock-perl \
+                    rsync libssl-dev nfs-kernel-server btrfs-progs ncurses-term p7zip-full kmod dosfstools \
+                    libc6-dev-armhf-cross imagemagick curl patchutils liblz4-tool libpython2.7-dev linux-base swig acl \
+                    python3-dev python3-distutils libfdt-dev locales ncurses-base pixz dialog systemd-container udev \
+                    lib32stdc++6 libc6-i386 lib32ncurses5 lib32tinfo5 bison libbison-dev flex libfl-dev cryptsetup gpg \
+                    gnupg1 gpgv1 gpgv2 cpio aria2 pigz dirmngr python3-distutils distcc git dos2unix apt-cacher-ng
 ```
 
 ### 重点工具介绍
@@ -352,18 +365,21 @@ parted命令是由GNU组织开发的一款功能强大的磁盘分区和分区�
 下载`rdk-gen`源码：
 
 ```shell
-git clone https://github.com/HorizonRDK/rdk-gen.git
+git clone https://github.com/D-Robotics/rdk-gen.git
 ```
 
 执行以下命令生成ubuntu文件系统：
 
 ```shell
-mkdir ubuntu_rootfs
-cd ubuntu_rootfs
-cp ../make_ubuntu_rootfs.sh .
+cd samplefs
 chmod +x make_ubuntu_rootfs.sh
+# 默认编译 desktop 的 samplefs
 sudo ./make_ubuntu_rootfs.sh
+# 指定编译 server 版本的 samplefs
+sudo ./make_ubuntu_rootfs.sh server
 ```
+
+需要有 sudo 权限进行编译。
 
 编译成功的输出结果：
 
@@ -412,4 +428,4 @@ rootfs/                                    # 解压 samplefs_desktop-v2.0.0.tar.
 
 **DESKTOP_PACKAGE_LIST**: 支持桌面图形化界面需要安装的软件包
 
-地平线官方维护的 `samplefs_desktop` 文件系统会包含以上所有配置包的内容，用户可以根据自己的需求进行增、删。
+RDK 官方维护的 `samplefs_desktop` 文件系统会包含以上所有配置包的内容，用户可以根据自己的需求进行增、删。
