@@ -189,15 +189,6 @@ RDK X3的最小启动镜像一般会由D-robotics官方进行维护发布，可�
 
 按照以下步骤重新编译生成miniboot。
 
-### 同步uboot代码
-
-执行命令下载uboot代码：
-
-```shell
-git submodule init
-git submodule update
-```
-
 ### 选择硬件配置文件
 
 ```shell
