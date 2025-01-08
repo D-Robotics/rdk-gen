@@ -6,40 +6,20 @@
 
 ## 开发环境
 
-交叉编译是指在主机上开发和构建软件，然后把构建的软件部署到开发板上运行。主机一般拥有比开发板更高的性能和内存，可以加速代码的构建，可以安装更多的开发工具，方便开发。
+交叉编译是指在主机上开发和构建软件，然后把构建的软件部署到开发板上运行。主机一般拥有比开发板更高的性能和更多的内存，可以高效完成代码的构建，可以安装更多的开发工具。
 
 **主机编译环境要求**
 
-推荐使用 Ubuntu 操作系统，若使用其它系统版本，可能需要对编译环境做相应调整。
-
-Ubuntu 18.04 系统安装以下软件包：
-
-```shell
-sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
-flex python-numpy mtd-utils zlib1g-dev debootstrap \
-libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
-curl git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
-android-tools-fsutils mtools parted dosfstools udev rsync
-```
-
-Ubuntu 20.04 系统安装以下软件包：
-
-```shell
-sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
-flex python-numpy mtd-utils zlib1g-dev debootstrap \
-libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
-curl git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
-android-sdk-libsparse-utils android-sdk-ext4-utils mtools parted dosfstools udev rsync
-```
+推荐使用 Ubuntu 22.04 操作系统，保持和RDK X5相同的系统版本，减少因版本差异产生的依赖问题。
 
 Ubuntu 22.04 系统安装以下软件包：
 
 ```shell
 sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
-flex python3-numpy mtd-utils zlib1g-dev debootstrap \
-libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
-curl repo git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
-android-sdk-libsparse-utils mtools parted dosfstools udev rsync
+                        flex python3-numpy mtd-utils zlib1g-dev debootstrap \
+                        libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
+                        curl repo git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
+                        android-sdk-libsparse-utils mtools parted dosfstools udev rsync
 ```
 
 **安装交叉编译工具链**
@@ -47,35 +27,39 @@ android-sdk-libsparse-utils mtools parted dosfstools udev rsync
 执行以下命令下载交叉编译工具链：
 
 ```shell
-curl -fO http://archive.d-robotics.cc//toolchain/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu.tar.xz
+curl -fO http://archive.d-robotics.cc/toolchain/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu.tar.xz
 ```
 
-解压并安装，建议安装到/opt目录下，通常向/opt目录写数据需要sudo权限，例如:
+解压并安装到 /opt 目录下：
 
 ```shell
 sudo tar -xvf gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu.tar.xz -C /opt
 ```
 
-配置交叉编译工具链的环境变量：
+## 下载源码
 
+rdk-linux 相关的内核、bootloader、hobot-xxx 软件包源码都托管在 [GitHub](https://github.com/) 上。在下载代码前，请先注册、登录  [GitHub](https://github.com/)，并通过 [Generating a new SSH key and adding it to the ssh-agent](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) 方式添加开发服务器的`SSH Key`到用户设置中。
+
+首先，临时更换repo为国内源
 ```shell
-export CROSS_COMPILE=/opt/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/bin/aarch64-linux-gnu-
-export LD_LIBRARY_PATH=/opt/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
-export PATH=$PATH:/opt/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/bin/
-export ARCH=arm64
+export REPO_URL='https://mirrors.tuna.tsinghua.edu.cn/git/git-repo/'
 ```
 
-以上命令是临时配置环境变量，要想配置永久生效，可以把以上命令添加到环境变量文件 `~/.profile` 或者 `~/.bash_profile` 的末尾。
-
-## rdk-gen
-
-rdk-gen用于构建适用于D-robotics RDK X3的定制操作系统镜像。它提供了一个可扩展的框架，允许用户根据自己的需求定制和构建RDK X3的Ubuntu操作系统。
-
-下载源码：
+执行以下命令初始化主线分支仓库清单 与官方发布的最新系统镜像版本对应：
 
 ```shell
-git clone https://github.com/D-Robotics/rdk-gen.git
+repo init -u git@github.com:D-Robotics/manifest.git -b main
 ```
+
+执行以下命令同步代码
+
+```shell
+repo sync
+```
+
+也可以下载其他分支代码，比如，使用`-b develop`初始化`develop`分支仓库清单，开发分支的代码会不断新增特性与修复 bug，但是稳定性没有主分支代码高
+
+## 源码目录结构
 
 下载完成后，rdk-gen的目录结构如下：
 
@@ -109,19 +93,8 @@ sudo ./pack_image.sh
 3. 把deb安装进filesystem
 4. 生成系统镜像
 
-## 下载源码
 
-rdk-linux相关的内核、bootloader、hobot-xxx软件包源码都托管在 [GitHub](https://github.com/)上。在下载代码前，请先注册、登录  [GitHub](https://github.com/)，并通过 [Generating a new SSH key and adding it to the ssh-agent](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) 方式添加开发服务器的`SSH Key`到用户设置中。
-
-`source_sync.sh`用于下载源代码，包括bootloader、uboot、kernel、示例代码等，该下载程序通过执行 `git clone git@github.com:xxx.git` 的方式把所有源码下载到本地。
-
-执行以下命令下载主线分支代码：
-
-```shell
-./source_sync.sh -t feat-ubuntu22.04
-```
-
-该程序默认会把源码下载到 source 目录下：
+## 了解source目录
 
 ```
 source
