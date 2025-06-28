@@ -1,7 +1,7 @@
 #!/bin/bash
 ###
  # COPYRIGHT NOTICE
- # Copyright 2023 Horizon Robotics, Inc.
+ # Copyright 2024 D-Robotics, Inc.
  # All rights reserved.
  # @Date: 2023-03-16 15:02:28
  # @LastEditTime: 2023-03-22 18:52:51
@@ -21,9 +21,10 @@ export IMAGE_DEPLOY_DIR=${HR_TOP_DIR}/deploy
 [ -n "${IMAGE_DEPLOY_DIR}" ] && [ ! -d "$IMAGE_DEPLOY_DIR" ] && mkdir "$IMAGE_DEPLOY_DIR"
 
 KERNEL_BUILD_DIR=${IMAGE_DEPLOY_DIR}/kernel
-[ -n "${IMAGE_DEPLOY_DIR}" ] && [ ! -d ""${KERNEL_BUILD_DIR}"" ] && mkdir "$KERNEL_BUILD_DIR"
+[ -n "${KERNEL_BUILD_DIR}" ] && [ ! -d "${KERNEL_BUILD_DIR}" ] && mkdir "$KERNEL_BUILD_DIR"
 
-N=$(($(grep -c 'processor' /proc/cpuinfo) - 2 ))
+[ $(cat /proc/cpuinfo |grep 'processor'|wc -l) -gt 2 ] \
+    && N="$((($(cat /proc/cpuinfo |grep 'processor'|wc -l)) - 2))" || N=1
 
 # 默认使用emmc配置，对于nor、nand需要使用另外的配置文件
 kernel_config_file=xj3_perf_ubuntu_defconfig
@@ -130,7 +131,7 @@ function build_all()
 {
     # 生成内核配置.config
     make $kernel_config_file || {
-        echo "make $config failed"
+        echo "make ${kernel_config_file} failed"
         exit 1
     }
 
@@ -149,7 +150,7 @@ function build_all()
     # 安装内核模块
     KO_INSTALL_DIR="${KERNEL_BUILD_DIR}"/modules
     [ ! -d "${KO_INSTALL_DIR}" ] && mkdir -p "${KO_INSTALL_DIR}"
-    rm -rf "${KO_INSTALL_DIR:?}"/*
+    rm -rf "${KO_INSTALL_DIR:?}"/"${KERNEL_VER}"
 
     make INSTALL_MOD_PATH="${KO_INSTALL_DIR}" INSTALL_MOD_STRIP=1 modules_install -j${N} || {
         echo "make modules_install to INSTALL_MOD_PATH for release ko failed"
@@ -163,7 +164,7 @@ function build_all()
     rm -rf "${KO_INSTALL_DIR}"/lib/modules/"${KERNEL_VER}"/{build,source}
 
     # ko 签名
-    pre_pkg_preinst
+    # pre_pkg_preinst
 
     # 拷贝 内核 zImage.lz4
     cp -f "arch/arm64/boot/${kernel_image_name}" "${KERNEL_BUILD_DIR}"/
@@ -191,6 +192,39 @@ function build_all()
     make_kernel_headers
 }
 
+function kernel_menuconfig() {
+	# Check if kernel_config_file variable is set
+	if [ -z "${kernel_config_file}" ]; then
+		echo "[ERROR]: Kernel defconfig file is not set. Aborting menuconfig."
+		return 1
+	fi
+
+	# Run menuconfig with the specified Kernel configuration file
+	KERNEL_DEFCONFIG=$(basename "${kernel_config_file}")
+	echo "[INFO]: Kernel menuconfig with ${KERNEL_DEFCONFIG}"
+	make ${BUILD_OPTIONS} -C "${KERNEL_SRC_DIR}" "${KERNEL_DEFCONFIG}"
+
+	# 执行 make menuconfig
+	script -q -c "make ${BUILD_OPTIONS} -C ${KERNEL_SRC_DIR} menuconfig" /dev/null
+
+	# Check if menuconfig was successful
+	if [ $? -eq 0 ]; then
+		# Run savedefconfig to save the configuration back to the original file
+		make ${BUILD_OPTIONS} -C "${KERNEL_SRC_DIR}" savedefconfig
+		dest_defconf_path="${HR_TOP_DIR}/source/kernel/arch/arm64/configs/${KERNEL_DEFCONFIG}"
+		echo "**** Saving Kernel defconfig to ${dest_defconf_path} ****"
+		cp -f "${KERNEL_SRC_DIR}/defconfig" "${dest_defconf_path}"
+	fi
+
+	# Check if savedefconfig was successful
+	if [ $? -ne 0 ]; then
+		echo "[ERROR]: savedefconfig failed. Configuration may not be saved."
+		return 1
+	fi
+
+	echo "[INFO]: Kernel menuconfig completed successfully."
+}
+
 function build_clean()
 {
     make clean
@@ -210,4 +244,6 @@ elif [ "$1" = "clean" ]; then
     build_clean
 elif [ "$1" = "distclean" ]; then
     build_distclean
+elif [ "$1" = "menuconfig" ]; then
+	kernel_menuconfig
 fi
