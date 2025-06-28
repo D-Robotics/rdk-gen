@@ -156,9 +156,7 @@ function make_ubuntu_image()
 {
     # Unzip ubuntu samplefs to create image
     echo "tar -xzf ${ROOTFS_ORIG_DIR}/samplefs*.tar.gz -C ${ROOTFS_BUILD_DIR}"
-    #tar --same-owner --numeric-owner -xzpf "${ROOTFS_ORIG_DIR}"/samplefs*.tar.gz -C "${ROOTFS_BUILD_DIR}"
-    tar --same-owner --numeric-owner -xzpf "${ROOTFS_ORIG_DIR}"/samplefs_desktop_jammy-v3.0.4.tar.gz -C "${ROOTFS_BUILD_DIR}"
-
+    tar --same-owner --numeric-owner -xzpf "${ROOTFS_ORIG_DIR}"/samplefs*.tar.gz -C "${ROOTFS_BUILD_DIR}"
     mkdir -p "${ROOTFS_BUILD_DIR}"/{home,home/root,mnt,root,usr/lib,var,media}
     mkdir -p "${ROOTFS_BUILD_DIR}"/{tftpboot,var/lib,var/volatile,dev,proc,tmp}
     mkdir -p "${ROOTFS_BUILD_DIR}"/{run,sys,userdata,app,boot/hobot,boot/config}
@@ -289,9 +287,9 @@ function make_ubuntu_image()
     exit 0
 }
 
-#if [ "${LOCAL_BUILD}" == "false" ]; then
-    #"${HR_LOCAL_DIR}"/download_samplefs.sh -c "${CONFIG_FILE}"
-    #"${HR_LOCAL_DIR}"/download_deb_pkgs.sh -c "${CONFIG_FILE}"
-#fi
+if [ "${LOCAL_BUILD}" == "false" ]; then
+    "${HR_LOCAL_DIR}"/download_samplefs.sh -c "${CONFIG_FILE}"
+    "${HR_LOCAL_DIR}"/download_deb_pkgs.sh -c "${CONFIG_FILE}"
+fi
 
 make_ubuntu_image
