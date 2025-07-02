@@ -18,7 +18,7 @@ if [ "${this_user}" != "root" ]; then
 fi
 
 # Default configuration file
-DEFAULT_CONFIG="${HR_LOCAL_DIR}/build_params/ubuntu-22.04_desktop_rdk-x5_release.conf"
+DEFAULT_CONFIG="${HR_LOCAL_DIR}/build_params/ubuntu-22.04_desktop_rdk-x3_release.conf"
 
 # Initialize variable
 CONFIG_FILE="$DEFAULT_CONFIG"
