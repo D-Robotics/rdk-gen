@@ -20,14 +20,14 @@ function gen_contrl_file() {
     Version="$3"
     Description="$4"
     Architecture="$ARCH"
-    Maintainer="technical_support@horizon.cc"
+    Maintainer="developer@d-robotics.cc"
     if [ ! -f ${control_path}/control ];then
         touch ${control_path}/control
     fi
     cat <<-EOF > ${control_path}/control
 	Package: ${Package}
 	Version: ${Version}
-	Architecture: ${ARCH}
+	Architecture: ${Architecture}
 	Maintainer: ${Maintainer}
 	Depends: ""
 	Installed-Size: 0
@@ -55,7 +55,7 @@ cat <<EOF > "${deb_dst_dir}/usr/share/doc/${Package}/copyright"
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 
 Files: *
-Copyright: 2023, Horizon Robotics
+Copyright: 2024, D-Robotics
 EOF
 }
 
@@ -66,7 +66,7 @@ function gen_changelog() {
 cat <<EOF > "${changelog}"
 ${Package} ($Version)
 
-  * Refer to Package Release Notes for details: https://developer.horizon.ai/api/v1/fileData/documents_pi/index.html
+  * Refer to Package Release Notes for details: https://developer.d-robotics.cc/rdk_doc_cn
 
  -- ${Maintainer}
 
@@ -518,7 +518,7 @@ deb_pkg_list=(
 
 function help_msg
 {
-    echo "./mk_deb.sh [all] | [deb_name]"
+    echo "./mk_debs.sh [all] | [deb_name]"
     for pkg_name in ""${deb_pkg_list[@]}""; do
         echo "    ${pkg_name}"
     done
