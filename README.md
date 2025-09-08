@@ -1,127 +1,100 @@
-# Development Environment Setup and Compilation Instructions
+# 开发环境搭建及编译说明
 
-## Overview
+## 概述
 
-This section introduces the requirements and setup for a cross-compilation development environment, as well as instructions for compiling system images.
+介绍交叉编译开发环境的要求及搭建，系统镜像的编译说明。
 
-## Development Environment
+## 开发环境
 
-Cross-compilation refers to the process of developing and building software on a host machine and then deploying the built software onto a development board. The host machine generally has higher performance and memory compared to the development board, which can accelerate code builds and allow for the installation of additional development tools, facilitating development.
+交叉编译是指在主机上开发和构建软件，然后把构建的软件部署到开发板上运行。主机一般拥有比开发板更高的性能和更多的内存，可以高效完成代码的构建，可以安装更多的开发工具。
 
-**Host Compilation Environment Requirements**
+**主机编译环境要求**
 
-It is recommended to use an Ubuntu operating system. If you are using a different system version, adjustments to the compilation environment may be necessary.
+推荐使用 Ubuntu 22.04 操作系统，保持和RDK X3相同的系统版本，减少因版本差异产生的依赖问题。
 
-For Ubuntu 18.04, install the following packages:
-
-```shell
-sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
-flex python-numpy mtd-utils zlib1g-dev debootstrap \
-libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
-curl git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
-android-tools-fsutils mtools parted dosfstools udev rsync
-```
-
-For Ubuntu 20.04, install the following packages:
+Ubuntu 22.04 系统安装以下软件包：
 
 ```shell
 sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
-flex python-numpy mtd-utils zlib1g-dev debootstrap \
-libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
-curl git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
-android-sdk-libsparse-utils android-sdk-ext4-utils mtools parted dosfstools udev rsync
+                        flex python3-numpy mtd-utils zlib1g-dev debootstrap \
+                        libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
+                        curl repo git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
+                        android-sdk-libsparse-utils mtools parted dosfstools udev rsync
 ```
 
-For Ubuntu 22.04, install the following packages:
+**安装交叉编译工具链**
+
+执行以下命令下载交叉编译工具链：
 
 ```shell
-sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
-flex python3-numpy mtd-utils zlib1g-dev debootstrap \
-libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
-curl repo git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
-android-sdk-libsparse-utils mtools parted dosfstools udev rsync
+curl -fO http://archive.d-robotics.cc/toolchain/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu.tar.xz
 ```
 
-**Installing the Cross-Compilation Toolchain**
-
-Execute the following command to download the cross-compilation toolchain:
-
-```shell
-curl -fO http://archive.d-robotics.cc//toolchain/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu.tar.xz
-```
-
-Extract and install the toolchain. It is recommended to install it in the /opt directory. Typically, writing to the /opt directory requires sudo permissions. For example:
+解压并安装到 /opt 目录下：
 
 ```shell
 sudo tar -xvf gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu.tar.xz -C /opt
 ```
 
-Configure the environment variables for the cross-compilation toolchain:
+## 下载源码
 
+rdk-linux 相关的内核、bootloader、hobot-xxx 软件包源码都托管在 [GitHub](https://github.com/) 上。在下载代码前，请先注册、登录  [GitHub](https://github.com/)，并通过 [Generating a new SSH key and adding it to the ssh-agent](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) 方式添加开发服务器的`SSH Key`到用户设置中。
+
+首先，临时更换repo为国内源
 ```shell
-export CROSS_COMPILE=/opt/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/bin/aarch64-linux-gnu-
-export LD_LIBRARY_PATH=/opt/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
-export PATH=$PATH:/opt/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/bin/
-export ARCH=arm64
+export REPO_URL='https://mirrors.tuna.tsinghua.edu.cn/git/git-repo/'
 ```
 
-The above commands set the environment variables temporarily. To make the configuration permanent, you can add these commands to the end of the environment variable files ~/.profile or ~/.bash_profile.
-
-## rdk-gen
-
-`rdk-gen` is used to build a customized operating system image for the D-robotics RDK X3. It provides an extensible framework that allows users to tailor and build the Ubuntu operating system for the RDK X3 according to their specific requirements.
-
-Download the source code:
+执行以下命令初始化主线分支仓库清单 与官方发布的最新系统镜像版本对应：
 
 ```shell
-git clone https://github.com/D-Robotics/rdk-gen.git
+repo init -u git@github.com:D-Robotics/manifest.git -b main
 ```
 
-After the download is complete, the directory structure of rdk-gen is as follows:
+执行以下命令同步代码
 
-| **Directory**                  | **Description**                                                     |
+```shell
+repo sync
+```
+
+也可以下载其他分支代码，比如，使用`-b develop`初始化`develop`分支仓库清单，开发分支的代码会不断新增特性与修复 bug，但是稳定性没有主分支代码高
+
+## 源码目录结构
+
+下载完成后，rdk-gen的目录结构如下：
+
+| **目录**                  | **说明**                                                     |
 | ------------------------- | ------------------------------------------------------------ |
-| pack_image.sh             | The entry point for building the system image code is:                                       |
-| download_samplefs.sh      | Download the pre-built base Ubuntu file system:                       |
-| download_deb_pkgs.sh      | Download the D-robotics `.deb` software packages that need to be pre-installed in the system image, including the kernel, multimedia libraries, example code, `tros.bot`, and other components. |
-| hobot_customize_rootfs.sh | Customizes and modifies the Ubuntu file system.                               |
-| source_sync.sh            | Downloads source code, including bootloader, U-Boot, kernel, example code, etc.      |
-| mk_kernel.sh              | Compiles the kernel, device tree, and driver modules.                                   |
-| mk_debs.sh                | Generates .deb software packages.                                                |
-| make_ubuntu_samplefs.sh   | Creates the Ubuntu system file system; this script can be modified to customize the sample file system.   |
-| config                    | Contains content to be placed in the system image's /hobot/config directory. It is a VFAT root partition. If the system boots from an SD card, users can modify this partition's content directly in Windows. |
+| pack_image.sh             | 构建系统镜像的代码入口                                       |
+| download_samplefs.sh      | 下载预先制作的基础ubuntu文件系统                       |
+| download_deb_pkgs.sh      | 下载D-robotics的deb软件包，需要预装到系统镜像中，包括内核、多媒体库、示例代码、tros.bot等 |
+| hobot_customize_rootfs.sh | 定制化修改ubuntu文件系统                               |
+| source_sync.sh            | 下载源码，包括bootloader、uboot、kernel、示例代码等源码      |
+| mk_kernel.sh              | 编译内核、设备树和驱动模块                                   |
+| mk_debs.sh                | 生成deb软件包                                                |
+| make_ubuntu_samplefs.sh   | 制作ubuntu系统filesystem的代码，可以修改本脚本定制samplefs   |
+| config                    | 存放需要放到系统镜像/hobot/config目录下的内容，一个vfat根式的分区，如果是sd卡启动方式，用户可以在windows系统下直接修改该分区的内容。 |
 
-## Building the System Image
+## 编译系统镜像
 
-Run the following command to package the system image:
+运行以下命令进行系统镜像的打包：
 
 ```shell
 cd rdk-gen
 sudo ./pack_image.sh
 ```
 
-You need sudo permissions to compile. Upon successful compilation, an *.img system image file will be generated in the deploy directory.
+需要有sudo权限进行编译，成功后会在deploy目录下生成 `*.img` 的系统镜像文件。
 
-### Overview of the pack_image.sh Compilation Process
+### pack_image.sh 编译过程介绍
 
-1. Calls download_samplefs.sh and download_deb_pkgs.sh scripts to download the sample file system and required .deb packages from D-robotics' file server.
-2. Extracts the sample file system and uses the hobot_customize_rootfs.sh script to customize the file system configuration.
-3. Installs the .deb packages into the file system.
-4. Generates the system image.
+1. 调用 download_samplefs.sh 和 download_deb_pkgs.sh 两个脚本从D-robotics的文件服务器上下载samplefs和需要预装的deb软件包
+2. 解压samplefs，并调用 hobot_customize_rootfs.sh 脚本对filesystem做定制化配置
+3. 把deb安装进filesystem
+4. 生成系统镜像
 
-## Downloading Source Code
 
-The source code for rdk-linux-related kernel, bootloader, and hobot-xxx software packages is hosted on GitHub. Before downloading the code, please register and log in to GitHub, and add the SSH key for the development server to your user settings via Generating a new SSH key and adding it to the ssh-agent.
-
-The source_sync.sh script is used to download the source code, including bootloader, U-Boot, kernel, example code, etc. This script downloads all the source code locally by executing git clone git@github.com:xxx.git.
-
-Execute the following command to download the main branch code:
-
-```shell
-./source_sync.sh -t feat-ubuntu22.04
-```
-
-By default, the program will download the source code to the `source` directory:
+## 了解source目录
 
 ```
 source
@@ -147,25 +120,25 @@ source
 
 ## kernel
 
-Execute the following command to compile the Linux kernel:
+执行以下命令编译linux内核：
 
 ```shell
 ./mk_kernel.sh
 ```
 
-After compilation, the kernel image, driver modules, device tree, and kernel header files will be generated in the `deploy/kernel` directory.
+编译完成后，会在`deploy/kernel`目录下生成内核镜像、驱动模块、设备树、内核头文件。
 
 ```shell
 dtb  Image  Image.lz4  kernel_headers  modules
 ```
 
-These contents will be used by the hobot-boot, hobot-dtb, and hobot-kernel-headers Debian packages. Therefore, if you want to customize these three software packages, you need to compile the kernel first.
+这些内容会被hobot-boot、hobot-dtb和hobot-kernel-headers三个debian包所使用，所以如果想要自定义修改这三个软件包，需要先编译内核。
 
-## hobot-xxx.deb
+## hobot-xxx软件包
 
-hobot-xxx.deb are Debian software packages maintained by D-robotics. After downloading the source code, you can use the mk_deb.sh script to rebuild the Debian packages.
+hobot-xxx软件包是D-robotics维护的debian软件包的源码和配置，下载源码后，可以执行 `mk_deb.sh` 重新构建debian包。
 
-The help information is as follows:
+帮助信息如下：
 
 ```shell
 $ ./mk_debs.sh help
@@ -190,19 +163,19 @@ The debian package named by help is not supported, please check the input parame
     hobot-display, Version 2.0.0
 ```
 
-### Full Build
+### 整体构建
 
-Execute the following command to rebuild all the Debian packages (ensure that the kernel has been compiled first):
+执行以下命令会重新全部构建所有的debian包（需要先完成kernel的编译）：
 
 ```shell
 ./mk_deb.sh
 ```
 
-After the build is complete, the `.deb` packages will be generated in the `deploy/deb_pkgs` directory.
+构建完成后，会在`deploy/deb_pkgs`目录下生成deb软件包。
 
-### Building Individual Packages
+### 构建单独软件包
 
-The mk_deb.sh script supports building specific packages individually by providing the package name as a parameter during execution. For example:
+`mk_deb.sh` 支持单独构建指定的软件包，在执行时带包名参数即可，例如：
 
 ```shell
 ./mk_deb.sh hobot-configs
@@ -210,22 +183,13 @@ The mk_deb.sh script supports building specific packages individually by providi
 
 ## bootloader
 
-The bootloader source code is used to generate a minimal boot image, miniboot.img, which includes the partition table, SPL, DDR, BL31, and U-Boot in a single boot firmware.
+`bootloader`源码用于生成最小启动镜像`miniboot.img`，生成包含分区表、spl、ddr、bl31、uboot一体的启动固件。
 
-The minimal boot image for the RDK X3 is typically maintained and released by D-robotics,You can download the corresponding version from (http://archive.d-robotics.cc/downloads/miniboot/).
+RDK X3的最小启动镜像一般会由D-robotics官方进行维护发布，可以从 [miniboot](http://archive.d-robotics.cc/downloads/miniboot/) 下载对应的版本。
 
-Follow these steps to recompile and generate miniboot:
+按照以下步骤重新编译生成miniboot。
 
-### Sync U-Boot Code
-
-Execute the following command to download the U-Boot source code:
-
-```shell
-git submodule init
-git submodule update
-```
-
-### Select the hardware configuration file:
+### 选择硬件配置文件
 
 ```shell
 cd build
@@ -240,24 +204,24 @@ Lunch menu... pick a combo:
 Which would you like? [0] :  
 ```
 
-Select the board-level configuration file according to the prompt.
+根据提示选择板级配置文件。
 
-The pre-configured files are designed for different hardware configurations of development boards, varying in aspects such as whether miniboot is burned to eMMC or NAND, the DDR model and capacity, and the root file system:
+以上预置配置文件都是适配不同的开发板的硬件配置，区别在于使用的emmc或者nand烧录miniboot、ddr型号和容量、根文件系统不同：
 
-| Board-Level Configuration File                                   | Memory               | rootfs       | Minimum Boot Image Storage | Main Storage    |
+| 板级配置文件                                   | 内存               | rootfs       | 最小启动镜像存储器 | 主存储器    |
 | ---------------------------------------------- | ------------------ | ------------ | ------------------ | ----------- |
 | board_ubuntu_emmc_sdcard_config.mk             | LPDDR4 2GB | ubuntu-20.04 | emmc               | sdcard      |
 | board_ubuntu_emmc_sdcard_samsung_4GB_config.mk | LPDDR4 4GB | ubuntu-20.04 | emmc               | sdcard      |
 | board_ubuntu_nand_sdcard_config.mk             | LPDDR4 2GB | ubuntu-20.04 | nand               | sdcard/emmc |
 | board_ubuntu_nand_sdcard_samsung_4GB_config.mk | LPDDR4 4GB | ubuntu-20.04 | nand               | sdcard/emmc |
 
-**Minimum Boot Image Storage:** The storage where miniboot is burned. Users of RDK X3 and RDK X3 Module should choose the NAND flash method.
+**最小启动镜像存储器：** 烧录miniboot的存储器，RDK X3、RDK X3 Module的用户统一选择nand flash方式
 
-**Main Storage: ** The storage for the Ubuntu system image. SD cards and eMMC are interchangeable, meaning that an image burned to a microSD card can also be burned to eMMC.
+**主存储器：** ubuntu系统镜像的存储器，sdcard和eMMC相互兼容，即烧录到Micro sd存储卡的镜像也可以烧录到eMMC
 
 
 
-The `lunch` command also supports specifying a number and board-level configuration file name to complete the configuration directly.
+lunch命令还支持指定数字和板级配置文件名直接完成配置。
 
 ```shell
 $ ./xbuild.sh lunch 2
@@ -271,46 +235,42 @@ You're building on #221-Ubuntu SMP Tue Apr 18 08:32:52 UTC 2023
 You are selected board config: horizon/x3/board_ubuntu_nand_sdcard_config.mk
 ```
 
-### Full Build
+### 整体编译
 
-Navigate to the `build` directory and execute `xbuild.sh` to perform the overall build:
+进入到build目录下，执行 xbuild.sh 进行整体编译：
 
 ```shell
 cd build
 ./xbuild.sh
 ```
 
-After a successful build, the following image files will be generated in the output directory (e.g., deploy_ubuntu_xxx):
-miniboot.img
-uboot.img
-disk_nand_minimum_boot.img
-Among these, disk_nand_minimum_boot.img is the minimal boot image file.
+编译成功后，会在编译镜像输出目录（deploy_ubuntu_xxx） 目录下生成 miniboot.img， uboot.img， disk_nand_minimum_boot.img等镜像文件。其中disk_nand_minimum_boot.img即最小启动镜像文件。
 
-### Modular Compilation
+### 模块化编译
 
-Compile individual modules using the xbuild.sh script. The resulting image files will be output to the build output directory (e.g., deploy_ubuntu_xxx).
+通过 xbuild.sh 脚本编译单独模块，生成的镜像文件会输出到编译镜像输出目录（deploy_ubuntu_xxx）下。
 
 ```shell
 ./xbuild.sh miniboot | uboot
 ```
 
-**miniboot：** use mk_miniboot.sh get miniboot.img
+**miniboot：** 调用mk_miniboot.sh 生成 miniboot.img
 
-**uboot:**  use mk_uboot.sh get uboot.img
+**uboot:**  调用mk_uboot.sh 生成 uboot.img
 
-After modular compilation, you can use the pack command to package the disk_nand_minimum_boot.img. 
+模块化编译后，可以执行 pack 命令打包 disk_nand_minimum_boot.img
 
 ```shell
 ./xbuild.sh pack
 ```
 
-## Ubuntu File System Creation
+## Ubuntu 文件系统制作
 
-This section describes how to create the samplefs_desktop-v3.0.0.tar.gz file system. D-robotics maintains this file system, but if you have customization needs, you will need to recreate it according to the instructions in this chapter.
+本章节介绍如何制作 `samplefs_desktop-v3.0.0.tar.gz` 文件系统，D-robotics会维护该文件系统，如果有定制化需求，则需按照本章说明重新制作。
 
-### Environment Setup
+### 环境配置
 
-It is recommended to use an Ubuntu host for creating the Ubuntu file system for the development board. First, install the following packages in the host environment:
+建议使用ubuntu主机进行开发板ubuntu文件系统的制作，首先在主机环境安装以下软件包：
 
 ```shell
 sudo apt-get install wget ca-certificates device-tree-compiler pv bc lzop zip binfmt-support \
@@ -324,68 +284,68 @@ lib32stdc++6 libc6-i386 lib32ncurses5 lib32tinfo5 bison libbison-dev flex libfl-
 gnupg1 gpgv1 gpgv2 cpio aria2 pigz dirmngr python3-distutils distcc git dos2unix apt-cacher-ng
 ```
 
-### Tools Introduction
+### 重点工具介绍
 
 #### debootstrap
 
-debootstrap is a tool for Debian/Ubuntu systems used to create a basic system (root file system). The generated directory conforms to the Linux Filesystem Hierarchy Standard (FHS), including directories like /boot, /etc, /bin, /usr, etc. However, it is much smaller than a full Linux distribution and has limited functionality, serving only as a "basic system" that can be customized to meet specific needs.
+debootstrap是debian/ubuntu下的一个工具，用来构建一套基本的系统(根文件系统)。生成的目录符合Linux文件系统标准(FHS)，即包含了 /boot、 /etc、 /bin、 /usr 等等目录，但它比发行版本的Linux体积小很多，当然功能也没那么强大，因此只能说是“基本的系统”，因此可以按照自身需求定制相应对ubuntu系统。
 
-Installing debootstrap on Ubuntu (PC)
+ubuntu系统（PC）下安装debootstrap
 
 ```shell
 sudo apt-get install debootstrap
 ```
 
-Usage method
+使用方式
 
 ```shell
-# Can add parameters to specify the source
-sudo debootstrap [options] <suite> <target> [mirror]
+# 可加参数指定源
+sudo debootstrap --arch [平台] [发行版本代号] [目录] [源]
 ```
 
 #### chroot
 
-chroot，Change root directory. In Linux systems, the default directory structure starts with '/', which is the root. After using chroot, the system's directory structure will use the specified location as the `/` position.
+chroot，即 change root directory (更改 root 目录)。在 linux 系统中，系统默认的目录结构都是以 `/`，即是以根 (root) 开始的。而在使用 chroot 之后，系统的目录结构将以指定的位置作为 `/` 位置。
 
 #### parted
 
-parted is a powerful disk partitioning and partition resizing tool developed by the GNU organization. Unlike fdisk, it supports resizing partitions. As a tool designed for Linux, it is not built to handle multiple partition types associated with fdisk, but it can handle the most common partition formats, including ext2, ext3, fat16, fat32, NTFS, ReiserFS, JFS, XFS, UFS, HFS, and Linux swap partitions.
+parted命令是由GNU组织开发的一款功能强大的磁盘分区和分区大小调整工具，与fdisk不同，它支持调整分区的大小。作为一种设计用于Linux的工具，它没有构建成处理与fdisk关联的多种分区类型，但是，它可以处理最常见的分区格式，包括：ext2、ext3、fat16、fat32、NTFS、ReiserFS、JFS、XFS、UFS、HFS以及Linux交换分区。
 
-### Creating Ubuntu rootfs script code
+### 制作Ubuntu rootfs脚本代码
 
-Execute the following command to generate the Ubuntu file system:
+执行以下命令生成ubuntu文件系统：
 
-build desktop ubuntu
+制作desktop系统
 ```shell
 cd samplefs
 sudo ./make_ubuntu_rootfs.sh
 ```
 
-The output result of successful compilation:
+编译成功的输出结果：
 
 ```shell
-desktop/                                   # compile output directory
-├── jammy-xj3-arm64                        # After successful compilation, the generated root file system will have a large number of temporary system files
-├── samplefs_desktop-v3.0.0.tar.gz         # Compress and package the required content in jammy-xj3-arm64
-└── samplefs_desktop-v3.0.0.tar.gz.info    # Which apt packages are currently installed on the system
+desktop/                                   # 编译输出目录
+├── jammy-xj3-arm64                        # 编译成功后生成的根文件系统，会有比较多的系统临时文件
+├── samplefs_desktop-v3.0.0.tar.gz         # 压缩打包 jammy-xj3-arm64 内需要的内容
+└── samplefs_desktop-v3.0.0.tar.gz.info    # 当前系统安装了哪些 apt 包
 ```
 
-build server ubuntu
+制作server系统
 ```shell
 cd samplefs
 sudo ./make_ubuntu_rootfs.sh server
 ```
 
-The output result of successful compilation:
+编译成功的输出结果：
 
 ```shell
-server/                                   # compile output directory
-├── jammy-xj3-arm64                       # After successful compilation, the generated root file system will have a large number of temporary system files
-├── samplefs_server-v3.0.0.tar.gz         # Compress and package the required content in jammy-xj3-arm64
-└── samplefs_server-v3.0.0.tar.gz.info    # Which apt packages are currently installed on the system
+server/                                   # 编译输出目录
+├── jammy-xj3-arm64                        # 编译成功后生成的根文件系统，会有比较多的系统临时文件
+├── samplefs_server-v3.0.0.tar.gz         # 压缩打包 jammy-xj3-arm64 内需要的内容
+└── samplefs_server-v3.0.0.tar.gz.info    # 当前系统安装了哪些 apt 包
 ```
 
-After decompressing samplefs_desktop-v3.0.0.tar.gz or samplefs_server-v3.0.0.tar.gz should be included
+解压 samplefs_desktop-v3.0.0.tar.gz 或者 samplefs_server-v3.0.0.tar.gz 后应该包含以下文件
 
 ```shell
 rootfs/
@@ -413,18 +373,18 @@ rootfs/
 21 directories, 5 files
 ```
 
-### Customized modifications
+### 定制化修改
 
-Definition of key variables in the code:
+代码中的关键变量定义：
 
-**PYTHON_PACKAGE_LIST**： Installed Python package
+**PYTHON_PACKAGE_LIST**： 安装的python包
 
-**DEBOOTSTRAP_LIST**：The Debian package installed during the execution of Bootstrap
+**DEBOOTSTRAP_LIST**：debootstrap执行时安装的Debian软件包
 
-**BASE_PACKAGE_LIST**： The most basic Debian package required for UBuntu system installation
+**BASE_PACKAGE_LIST**： 最基本的UBuntu系统所需要安装的Debian软件包
 
-**SERVER_PACKAGE_LIST**：Server versions of Ubuntu systems will install additional Debian packages on top of the base version
+**SERVER_PACKAGE_LIST**：Server 版本的Ubuntu系统会在基本版本上多安装的Debian软件包
 
-**DESKTOP_PACKAGE_LIST**: Software packages that need to be installed to support desktop graphical interfaces
+**DESKTOP_PACKAGE_LIST**: 支持桌面图形化界面需要安装的软件包
 
-The 'samplefs_desktop' file system maintained by D-robotics will contain the contents of all the configuration packages mentioned above, and users can add or delete them according to their own needs.
+D-robotics官方维护的 `samplefs_desktop` 文件系统会包含以上所有配置包的内容，用户可以根据自己的需求进行增、删。
